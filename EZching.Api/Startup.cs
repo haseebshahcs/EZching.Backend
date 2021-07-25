@@ -1,3 +1,4 @@
+using EZching.Api.Common;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
@@ -6,6 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
+using Newtonsoft.Json.Serialization;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -25,9 +27,22 @@ namespace EZching.Api
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-
-            services.AddControllers();
+            services.ConfigureDBContext(Configuration);
+            services.AddControllers()
+                .AddNewtonsoftJson(op =>
+                {
+                    op.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore;
+                    op.SerializerSettings.ContractResolver = new DefaultContractResolver();
+                });
             services.ConfigureCORs();
+
+            //registering autommaper here
+            services.AddAutoMapper(typeof(MapperInitializer));
+
+            #region Interface Injections
+            services.AddSingleton<IRepository.SystemConfiguration.ISystemConfig, Repository.SystemConfiguration.SystemConfig>();
+            #endregion Interface Injections
+
             services.ConfigureSwagger();
         }
 
@@ -41,10 +56,8 @@ namespace EZching.Api
                 app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "EZching.Api v1"));
             }
 
-            app.UseCors("AllowAll");
-
             app.UseRouting();
-
+            app.UseCors("AllowOrigin");
             app.UseAuthorization();
 
             app.UseEndpoints(endpoints =>

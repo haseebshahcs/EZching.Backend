@@ -1,4 +1,7 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using EZching.Data.Entities;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.OpenApi.Models;
 using System;
 using System.Collections.Generic;
@@ -25,7 +28,20 @@ namespace EZching.Api
             //CORS - cross origin resource sharing - used to allow or disallow api access (e.g. in company to thirdparty)
             services.AddCors(o =>
             {
-                o.AddPolicy("AllowAll", builder => builder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
+                o.AddPolicy("AllowOrigin",
+                    builder => builder.WithOrigins("http://localhost:4000", "https://EZching.com", "http://localhost:60477")
+                    .SetIsOriginAllowedToAllowWildcardSubdomains()
+                .AllowAnyHeader()
+                .AllowAnyMethod()
+                .AllowCredentials());
+            });
+        }
+
+        public static void ConfigureDBContext(this IServiceCollection services, IConfiguration configuration)
+        {
+            services.AddDbContext<EZChingContext>(options =>
+            {
+                options.UseSqlServer(configuration.GetConnectionString("DevConnection"));
             });
         }
     }
